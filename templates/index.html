@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scene Narrator | High-Level AI Accessibility</title>
+    <style>
+        /* --- General Styling & Dark Mode --- */
+        :root {
+            --color-dark-bg: #0a0a0a; /* Deep Black */
+            --color-medium-bg: #1f1f1f; /* Near Black */
+            --color-light-text: #e0e0e0;
+            --color-accent-primary: #00bcd4; /* Cyan/Teal */
+            --color-accent-secondary: #ff9800; /* Amber/Orange */
+            --color-accent-tertiary: #42a5f5; /* Bright Blue */
+            --color-narration-bg: #2c2c2c;
+            --color-loading: #ffab00;
+            --color-shadow: rgba(0, 0, 0, 0.7);
+        }
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--color-dark-bg);
+            color: var(--color-light-text);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Start elements from the top */
+            padding: 20px 10px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        /* --- Container & Typography --- */
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+        }
+
+        h1 {
+            color: var(--color-accent-primary);
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px var(--color-accent-primary), 0 0 20px var(--color-shadow);
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            text-align: center;
+        }
+        h2 {
+            margin-top: 20px;
+            margin-bottom: 15px;
+            color: var(--color-accent-primary);
+            font-weight: 500;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+        }
+        
+        /* --- ### NEW ### Header for Fast Scan Box --- */
+        .fast-scan-header {
+             color: var(--color-accent-secondary);
+        }
+
+        /* --- Camera/Video Styling --- */
+        #video-container {
+            background-color: #000;
+            border: 4px solid var(--color-medium-bg);
+            box-shadow: 0 10px 30px var(--color-shadow);
+            margin-bottom: 25px;
+            border-radius: 16px;
+            overflow: hidden;
+            width: 100%;
+            max-width: 680px;
+            aspect-ratio: 16/9; /* Maintain a standard video aspect ratio */
+        }
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        #canvas { display: none; }
+
+
+        /* --- Metrics Container Styling --- */
+        .metrics-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 680px;
+            margin-bottom: 30px;
+            padding: 10px 0;
+            border-radius: 12px;
+            background: linear-gradient(145deg, #1e1e1e, #141414);
+            box-shadow: inset 0 0 15px rgba(0, 188, 212, 0.1), 0 4px 15px var(--color-shadow);
+            flex-wrap: nowrap; /* Keep metrics in a single row */
+            gap: 5px;
+        }
+
+        .metric-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 5px 10px;
+            min-width: 30%;
+            border-right: 1px solid #333;
+        }
+        .metric-box:last-child {
+            border-right: none;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--color-accent-secondary);
+            text-shadow: 0 0 8px rgba(255, 152, 0, 0.5);
+            transition: color 0.3s ease;
+        }
+
+        /* --- Controls & Buttons --- */
+        .controls {
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            max-width: 680px;
+        }
+        button {
+            flex-grow: 1;
+            padding: 14px 20px;
+            color: var(--color-dark-bg);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+            min-width: 150px; /* Ensure buttons don't shrink too much */
+        }
+
+        /* Button Colors and Effects */
+        #startButton { background-color: #4CAF50; }
+        #captureButton { background-color: var(--color-accent-primary); }
+        #askButton { background-color: var(--color-accent-secondary); }
+        #locationButton { background-color: var(--color-accent-tertiary); }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.8);
+            filter: brightness(1.1);
+        }
+        button:active:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            background-color: #383838;
+            color: #999;
+            cursor: not-allowed;
+            box-shadow: none;
+            filter: grayscale(100%);
+        }
+        #location-status {
+            font-size: 0.9em;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        /* --- Narration & Status --- */
+        #loading {
+            display: none;
+            color: var(--color-loading);
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* --- ### NEW: Style for Fast Scan Box ### --- */
+        #fast-scan-box {
+            padding: 20px;
+            border: 2px solid var(--color-accent-secondary); /* Orange border */
+            border-radius: 12px;
+            width: 100%;
+            background: var(--color-narration-bg);
+            font-size: 1.2rem; /* Slightly smaller */
+            font-weight: 300;
+            line-height: 1.4;
+            min-height: 50px;
+            box-shadow: 0 0 20px rgba(255, 152, 0, 0.2); /* Orange shadow */
+            text-align: center;
+            color: var(--color-light-text);
+            margin-bottom: 30px; /* Space between the boxes */
+        }
+
+        #narration-box {
+            padding: 30px;
+            border: 2px solid var(--color-accent-primary); /* Cyan border */
+            border-radius: 12px;
+            width: 100%;
+            background: var(--color-narration-bg);
+            font-size: 1.4rem;
+            font-weight: 300;
+            line-height: 1.5;
+            min-height: 80px;
+            box-shadow: 0 0 20px rgba(0, 188, 212, 0.2); /* Cyan shadow */
+            text-align: center;
+            color: var(--color-light-text);
+        }
+
+        .speak-status {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 10px;
+            display: block;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* --- Mobile Responsiveness (Adjustments for small screens) --- */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.4rem;
+                letter-spacing: 2px;
+            }
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            button {
+                min-width: 100%;
+                font-size: 0.9rem;
+                padding: 12px;
+            }
+            .metrics-container {
+                flex-wrap: wrap;
+                justify-content: space-around;
+                padding: 10px;
+                gap: 15px;
+            }
+            .metric-box {
+                flex-basis: 30%;
+                min-width: 80px;
+                border-right: none; /* Remove vertical separators on wrap */
+            }
+            .metric-label {
+                font-size: 0.7rem;
+            }
+            .metric-value {
+                font-size: 1.2rem;
+            }
+            /* --- ### NEW ### --- */
+            #fast-scan-box {
+                font-size: 1.0rem;
+                padding: 15px;
+            }
+            #narration-box {
+                font-size: 1.1rem;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📸 SCENE NARRATOR AI</h1>
+
+        <div id="video-container">
+            <video id="video" autoplay></video>
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <!-- Metrics Display -->
+        <div class="metrics-container">
+            <div class="metric-box">
+                <span class="metric-label">Latency (s):</span>
+                <span id="latency-value" class="metric-value">0.00</span>
+            </div>
+            <div class="metric-box">
+                <span class="metric-label">Conciseness (Words):</span>
+                <span id="conciseness-value" class="metric-value">0</span>
+            </div>
+            <div class="metric-box">
+                <span class="metric-label">Reliability:</span>
+                <span id="reliability-value" class="metric-value">N/A</span>
+            </div>
+        </div>
+        <!-- END Metrics -->
+
+        <div class="controls">
+            <button id="startButton" onclick="startCamera()">START CAMERA</button>
+            <button id="captureButton" onclick="startNarrationFlow('narration')" disabled>DESCRIBE SCENE</button>
+            <button id="askButton" onclick="startListening()" disabled>ASK QUESTION 🎤</button>
+            <button id="locationButton" onclick="getLocation('speak')" disabled>FIND MY LOCATION</button>
+        </div>
+        
+        <p id="location-status">Location Status: Not requested.</p>
+        <p id="loading">...ANALYZING WITH AI...</p>
+        
+        <!-- --- ### NEW: Fast Scan Box ### --- -->
+        <h2 class="fast-scan-header">🚀 FAST SCAN</h2>
+        <div id="fast-scan-box">
+            Awaiting quick scan...
+        </div>
+
+        <!-- --- ### UPDATED: Gemini Box ### --- -->
+        <h2>💬 DETAILED NARRATION </h2>
+        <div id="narration-box">
+            Click 'Start Camera' to begin the interactive experience.
+        </div>
+    </div>
+
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        
+        // --- ### UPDATED: Get both boxes ### ---
+        const narrationBox = document.getElementById('narration-box');
+        const fastScanBox = document.getElementById('fast-scan-box'); // New box
+        // --- ### END UPDATE ### ---
+
+        const loadingText = document.getElementById('loading');
+        const captureButton = document.getElementById('captureButton');
+        const startButton = document.getElementById('startButton');
+        const askButton = document.getElementById('askButton');
+        const locationButton = document.getElementById('locationButton');
+        const locationStatus = document.getElementById('location-status');
+        
+        // --- Metric Elements ---
+        const latencyValue = document.getElementById('latency-value');
+        const concisenessValue = document.getElementById('conciseness-value');
+        const reliabilityValue = document.getElementById('reliability-value');
+
+        let cameraStream = null;
+        let userQuestion = null;
+        let currentLatitude = null;
+        let currentLongitude = null;
+        
+        const locationKeywords = ["where i am", "my location", "nearest hospital", "nearest police station", "nearest fire station", "nearest atm", "nearest restaurant", "nearest cafe", "nearest bus stop"];
+
+        // --- Metric Management Functions ---
+        function resetMetrics() {
+            latencyValue.textContent = '0.00';
+            concisenessValue.textContent = '0';
+        }
+
+        function updateMetrics(metrics) {
+            if (metrics) {
+                latencyValue.textContent = metrics.latency ? metrics.latency.toFixed(2) : 'N/A';
+                concisenessValue.textContent = metrics.wordCount || '0';
+                reliabilityValue.textContent = metrics.reliability || 'N/A';
+            }
+        }
+        // --- End Metric Management ---
+
+
+        // --- 1. Geolocation Functionality ---
+        function getLocation(mode) {
+            resetMetrics();
+            
+            // --- ### NEW: Reset both boxes ### ---
+            fastScanBox.textContent = 'Fast scan not applicable for location query.';
+            // --- ### END NEW ### ---
+
+            captureButton.disabled = true;
+            askButton.disabled = true;
+            locationButton.disabled = true;
+
+            if (navigator.geolocation) {
+                locationStatus.textContent = "Location Status: Requesting GPS...";
+                narrationBox.textContent = "Fetching current GPS coordinates...";
+                speakNarration("Fetching location.");
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        currentLatitude = position.coords.latitude;
+                        currentLongitude = position.coords.longitude;
+                        locationStatus.textContent = "Location Status: GPS Aquired.";
+                        
+                        if (mode === 'speak') {
+                            sendLocationQuery(currentLatitude, currentLongitude, null);
+                        } else if (mode === 'voice') {
+                            sendLocationQuery(currentLatitude, currentLongitude, userQuestion);
+                        }
+
+                    },
+                    (error) => {
+                        console.error("Geolocation Error: ", error);
+                        locationStatus.textContent = "Location Status: GPS Failed.";
+                        
+                        if (mode === 'voice') {
+                            narrationBox.textContent = "Warning: Location service failed. Analyzing visually instead...";
+                            speakNarration("Warning: Location service failed. Analyzing visually instead.");
+                            captureAndAnalyze(); 
+                        } else {
+                            narrationBox.textContent = "Error: Location service failed.";
+                            speakNarration("Error: Location service failed.");
+                            captureButton.disabled = false;
+                            askButton.disabled = false;
+                            locationButton.disabled = false;
+                        }
+                    },
+                    { enableHighAccuracy: true, timeout: 7000, maximumAge: 0 }
+                );
+            } else {
+                locationStatus.textContent = "Location Status: Not supported by browser.";
+                narrationBox.textContent = "Error: Geolocation is not supported by this browser.";
+                speakNarration("Geolocation is not supported.");
+                
+                captureButton.disabled = false;
+                askButton.disabled = false;
+                locationButton.disabled = false;
+            }
+        }
+        
+        async function sendLocationQuery(lat, lon, question) {
+            const startTime = performance.now();
+            
+            narrationBox.textContent = question 
+                ? `Finding information for: "${question}"...` 
+                : "Finding current address...";
+            loadingText.style.display = 'block';
+
+            // --- ### NEW: Clear fast scan box ### ---
+            fastScanBox.textContent = 'Fast scan not applicable for location query.';
+            // --- ### END NEW ### ---
+
+            try {
+                const response = await fetch('/location_info', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        latitude: lat,
+                        longitude: lon,
+                        question: question
+                    })
+                });
+                
+                const data = await response.json();
+                const narrationText = data.narration;
+                
+                updateMetrics(data.metrics); 
+
+                narrationBox.innerHTML = `<strong>${narrationText}</strong>` + '<span class="speak-status"> (Speaking complete)</span>';
+                speakNarration(narrationText);
+
+            } catch (error) {
+                narrationBox.textContent = 'Location Service Error: Could not connect to the geocoding backend.';
+                speakNarration("Location service error.");
+            } finally {
+                if (!latencyValue.textContent || latencyValue.textContent === '0.00') {
+                    latencyValue.textContent = ((performance.now() - startTime) / 1000).toFixed(2);
+                }
+                
+                loadingText.style.display = 'none';
+                captureButton.disabled = false;
+                askButton.disabled = false;
+                locationButton.disabled = false;
+                userQuestion = null;
+            }
+        }
+
+        // --- 2. Live Camera Functionality ---
+        function startCamera() {
+            resetMetrics();
+            
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                narrationBox.textContent = "Error: Your browser does not support camera access.";
+                return;
+            }
+
+            narrationBox.textContent = "Requesting camera access...";
+
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }) 
+                .then(stream => {
+                    cameraStream = stream;
+                    video.srcObject = stream;
+                    video.onloadedmetadata = () => {
+                        video.play();
+                        captureButton.disabled = false;
+                        askButton.disabled = false;
+                        locationButton.disabled = false;
+                        
+                        // --- ### NEW: Reset both boxes ### ---
+                        narrationBox.textContent = "Camera Ready. Welcome to the interactive assistant.";
+                        fastScanBox.textContent = "Awaiting quick scan...";
+                        // --- ### END NEW ### ---
+                        
+                        speakNarration("Camera Ready. Welcome to the interactive assistant.");
+                    };
+                })
+                .catch(err => {
+                    console.error("Error accessing camera: ", err);
+                    narrationBox.textContent = "Error: Failed to access camera. Please check permissions.";
+                    fastScanBox.textContent = "Camera failed to start.";
+                    speakNarration("Camera access failed.");
+                });
+        }
+
+        // --- 3. Narration and TTS Functionality ---
+        function speakNarration(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); 
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.pitch = 1;
+                utterance.rate = 1.05; 
+
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.warn("Browser does not support Web Speech API for narration.");
+            }
+        }
+
+        // --- 4. Speech Recognition (Mic Button) ---
+        function startListening() {
+            resetMetrics();
+            
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                narrationBox.textContent = "Error: Speech Recognition not supported in this browser.";
+                speakNarration("Speech recognition not available.");
+                return;
+            }
+            if (captureButton.disabled) return;
+
+            // --- ### NEW: Reset both boxes ### ---
+            narrationBox.innerHTML = 'Listening... Speak your question now.';
+            fastScanBox.textContent = '...';
+            // --- ### END NEW ### ---
+            
+            speakNarration("Listening. Speak your question now.");
+            
+            captureButton.disabled = true;
+            askButton.disabled = true;
+            locationButton.disabled = true;
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                userQuestion = transcript;
+                narrationBox.innerHTML = `Question received: "<strong>${userQuestion}</strong>". Processing...`;
+                
+                const lowerQuestion = userQuestion.toLowerCase();
+                const isLocationQuery = locationKeywords.some(keyword => lowerQuestion.includes(keyword));
+
+                if (isLocationQuery) {
+                    getLocation('voice');
+                } else {
+                    captureAndAnalyze(); 
+                }
+            };
+
+            recognition.onerror = function(event) {
+                narrationBox.textContent = "Error: Could not recognize speech. Please try again.";
+                fastScanBox.textContent = 'Speech recognition error.';
+                userQuestion = null;
+                console.error('Speech recognition error:', event.error);
+                speakNarration("Speech recognition failed. Try again.");
+                captureButton.disabled = false;
+                askButton.disabled = false;
+                locationButton.disabled = false;
+            };
+
+            recognition.start();
+        }
+
+
+        // --- 5. Main Flow Logic (Image-Based) ---
+        function startNarrationFlow(mode) {
+            userQuestion = null; 
+            resetMetrics();
+            captureAndAnalyze();
+        }
+
+        async function captureAndAnalyze() {
+            if (!cameraStream) {
+                narrationBox.textContent = "Error: Camera not running.";
+                return;
+            }
+            
+            const startTime = performance.now();
+            captureButton.disabled = true;
+            askButton.disabled = true;
+            locationButton.disabled = true;
+            
+            // --- ### NEW: Reset both boxes for analysis ### ---
+            narrationBox.textContent = userQuestion ? 'Answering Visual Question...' : 'Awaiting detailed narration...';
+            fastScanBox.textContent = '...';
+            // --- ### END NEW ---
+
+            loadingText.style.display = 'block';
+            loadingText.textContent = '...ANALYZING WITH AI...'
+
+            if (userQuestion) {
+                 speakNarration("Analyzing image, please wait.");
+            }
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob(async function(blob) {
+                
+                // ### NEW: TIER 1 - FAST DETECTION ###
+                // This logic is now updated to write to its own box
+                if (!userQuestion) {
+                    loadingText.textContent = '...RUNNING QUICK SCAN...';
+                    try {
+                        const fastFormData = new FormData();
+                        fastFormData.append('image', blob, 'fast_capture.jpg');
+                        
+                        const fastResponse = await fetch('/fast_detect', {
+                            method: 'POST',
+                            body: fastFormData
+                        });
+                        const fastData = await fastResponse.json();
+
+                        if (fastData.objects && fastData.objects.length > 0) {
+                            const detected = fastData.objects.join(', ');
+                            
+                            // --- ### WRITE TO FAST BOX ### ---
+                            fastScanBox.textContent = `Quick scan: ${detected}`;
+                            // --- ### END ### ---
+
+                            speakNarration(`Quick scan: ${detected}. Now getting full details.`);
+                        } else {
+                            // --- ### WRITE TO FAST BOX ### ---
+                            fastScanBox.textContent = 'Quick scan: No common objects found.';
+                            // --- ### END ### ---
+                            speakNarration('Quick scan: No common objects found. Now getting full details.');
+                        }
+                    } catch (e) {
+                        console.error("Fast detect failed:", e);
+                        // --- ### WRITE TO FAST BOX ### ---
+                        fastScanBox.textContent = 'Fast scan failed.';
+                        // --- ### END ### ---
+                        speakNarration("Fast scan failed. Proceeding with full analysis.");
+                    }
+                    loadingText.textContent = '...GETTING FULL DETAILS...'; 
+                } else {
+                    // --- ### NEW: Handle visual question ### ---
+                    fastScanBox.textContent = 'Fast scan skipped for question.';
+                    // --- ### END NEW ### ---
+                }
+                // ### END TIER 1 UPDATE ###
+
+
+                // ### TIER 2 - FULL NARRATION (GEMINI) ###
+                // This logic is now correct, as it only writes to narrationBox
+                
+                const formData = new FormData();
+                formData.append('image', blob, 'camera_capture.jpg'); 
+                
+                if (userQuestion) {
+                    formData.append('question', userQuestion);
+                }
+                
+                try {
+                    const response = await fetch('/narrate', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    const narrationText = data.narration;
+                    
+                    updateMetrics(data.metrics); 
+                    
+                    // --- ### WRITE TO NARRATION BOX ### ---
+                    narrationBox.innerHTML = `<strong>${narrationText}</strong>` + '<span class="speak-status"> (Speaking complete)</span>';
+                    // --- ### END ### ---
+                    
+                    speakNarration(narrationText);
+
+                } catch (error) {
+                    narrationBox.textContent = 'Connection Error: Check server status.';
+                    speakNarration("Server error. Check connection.");
+                } finally {
+                    if (!latencyValue.textContent || latencyValue.textContent === '0.00') {
+                        latencyValue.textContent = ((performance.now() - startTime) / 1000).toFixed(2);
+                    }
+                    
+                    loadingText.style.display = 'none';
+                    captureButton.disabled = false;
+                    askButton.disabled = false;
+                    locationButton.disabled = false;
+                    userQuestion = null; 
+                }
+
+            }, 'image/jpeg', 0.9);
+        }
+        
+        window.onbeforeunload = function() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        };
+
+    </script>
+</body>
+</html>
