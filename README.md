@@ -21,15 +21,15 @@ Camera / Image Upload
         │
         ▼
 ┌──────────────────┐     ┌──────────────────────┐
-│  Tier 1: YOLOv8  │────▶│  Instant object list  │
-│  (Local, ~50ms)  │     │  "person, cup, laptop" │
+│  Tier 1: YOLOv8  │────▶│ Instant object list  │
+│  (Local, ~50ms)  │     │ "person, cup, laptop"│
 └──────────────────┘     └──────────────────────┘
         │
         ▼
 ┌──────────────────┐     ┌──────────────────────┐
-│  Tier 2: Gemini  │────▶│  Rich narration       │
-│  (Cloud AI)      │     │  "A person is sitting  │
-└──────────────────┘     │   at a desk with..."   │
+│  Tier 2: Gemini  │────▶│  Rich narration      │
+│  (Cloud AI)      │     │  "A person is sitting│
+└──────────────────┘     │   at a desk with..." │
                          └──────────────────────┘
 ```
 
@@ -98,7 +98,7 @@ Camera / Image Upload
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/` | Serves the web interface |
+| `GET`  | `/` | Serves the web interface |
 | `POST` | `/narrate` | Accepts an image and optional question; returns a Gemini-powered scene description |
 | `POST` | `/fast_detect` | Accepts an image; returns a fast list of detected objects via YOLOv8 |
 | `POST` | `/location_info` | Accepts latitude/longitude (and optional question); returns location details or nearby POIs |
