@@ -16,8 +16,8 @@ import numpy as np
 # 1. API Configuration & Initialization
 # =================================S======================================
 
-os.environ['GEMINI_API_KEY'] = 'REDACTED'
-OPENCAGE_API_KEY = 'REDACTED' 
+os.environ['GEMINI_API_KEY'] = 'Enter your Key here!'
+OPENCAGE_API_KEY = 'Enter your key here!' 
 
 try:
     client = genai.Client()
